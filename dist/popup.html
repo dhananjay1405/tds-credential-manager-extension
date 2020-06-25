@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="popup.css">
+    <link rel="stylesheet" href="spectre.min.css">
+    <script src="jquery-3.5.1.slim.min.js"></script>
+    <script src="popup.js"></script>
+</head>
+
+<body>
+    <div class="app-title">TDS Credential Manager</div>
+    <div class="sec-client-list">
+        <div class="container">
+            <div class="columns">
+                <div class="column col-9">
+                    <div class="form-group">
+                        <select id="ddlClients" class="form-select">
+                        </select>
+                    </div>
+                </div>
+                <div class="column col-3">
+                    <button class="btn btn-primary" id="btnPasteCredentials" style="width: 100%;">Paste</button>
+                </div>
+            </div>
+            <div class="columns mt-2">
+                <div class="column col-4">
+                    <button class="btn" id="btnExport" style="width: 100%;">Copy to Excel</button>
+                    <br>
+                    <div class="text-center">(export)</div>
+                </div>
+                <div class="column col-8">
+                    <input class="form-input" type="text" id="txtPasteData" placeholder="Paste Excel selection here...">
+                    <div class="text-center">(import)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="sec-client-form">
+        <div class="sec-client-form-title">Add / Edit / Delete</div>
+        <div class="container">
+            <div class="form-group">
+                <input class="form-input my-2" type="text" id="txtClientName" placeholder="Client Name">
+                <input class="form-input my-2" type="text" id="txtClientUser" placeholder="Username">
+                <input class="form-input my-2" type="password" id="txtClientPass" placeholder="Password">
+                <input class="form-input my-2" type="text" id="txtClientTAN" placeholder="TAN">
+            </div>
+            <div class="columns my-2">
+                <div class="column col-4">
+                    <button class="btn btn-success" id="btnAddClient" style="width: 100%;">Add</button>
+                </div>
+                <div class="column col-4">
+                    <button class="btn btn-warning" id="btnUpdateClient" style="width: 100%;" disabled>Update</button>
+                </div>
+                <div class="column col-4">
+                    <button class="btn btn-danger" id="btnDeleteClient" style="width: 100%;" disabled>Delete</button>
+                </div>
+            </div>
+            <div class="columns my-1">
+                <div id="lblMessage" class="column col-12 sec-client-form-message">&nbsp;</div>
+            </div>
+        </div>
+    </div>
+    <textarea id="txtCopyData" hidden></textarea>
+</body>
+
+</html>

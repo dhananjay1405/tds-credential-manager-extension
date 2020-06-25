@@ -1,0 +1,20 @@
+{
+  "name": "tds-credential-manager-extension",
+  "version": "1.0.0",
+  "description": "Browser Extension for managing TDS website credentials with one-click copy-paste functionality",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dhananjay1405/tds-credential-manager-extension.git"
+  },
+  "author": "dhananjay1405",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dhananjay1405/tds-credential-manager-extension/issues"
+  },
+  "homepage": "https://github.com/dhananjay1405/tds-credential-manager-extension#readme",
+  "devDependencies": {
+    "@types/chrome": "0.0.117",
+    "@types/jquery": "^3.5.0",
+    "@types/node": "^14.0.14"
+  }
+}
