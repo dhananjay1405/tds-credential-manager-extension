@@ -23,9 +23,13 @@
         "storage",
         "tabs",
         "activeTab",
-        "clipboardRead",
         "clipboardWrite"
     ],
     "manifest_version": 2,
-    "minimum_chrome_version": "66"
+    "incognito": "not_allowed",
+    "browser_specific_settings": {
+        "gecko": {
+            "strict_min_version": "55.0"
+        }
+    }
 }

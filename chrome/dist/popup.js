@@ -1,9 +1,5 @@
 "use strict";
 let lstClients = [];
-function escapeJS(unsafe) {
-    return unsafe
-        .replace(/'/g, "''");
-}
 function loadClients(cb) {
     chrome.storage.local.get((d) => {
         if (d && Array.isArray(d['credentials']))

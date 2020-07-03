@@ -1,5 +1,5 @@
-/// <reference path="../node_modules/@types/chrome/index.d.ts"/>
-/// <reference path="../node_modules/@types/jquery/index.d.ts"/>
+/// <reference path="../../node_modules/@types/firefox-webext-browser/index.d.ts"/>
+/// <reference path="../../node_modules/@types/jquery/index.d.ts"/>
 
 interface clientInfo {
     name: string;
@@ -15,33 +15,49 @@ interface messageInfo {
 
 let lstClients: clientInfo[] = [];
 
-function escapeJS(unsafe: string): string {
+function escapeHTML(unsafe: string): string {
     return unsafe
-        .replace(/'/g, "''")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
-function loadClients(cb: Function) {
-    chrome.storage.local.get((d) => {
-        if (d && Array.isArray(d['credentials']))
-            lstClients = d['credentials'];
-        cb();
-    });
+async function loadClients(cb: Function) {
+    let d = await browser.storage.local.get();
+    if (d && Array.isArray(d['credentials']))
+        lstClients = d['credentials'];
+    cb();
 }
 
-function saveClients(cb: Function) {
+async function saveClients(cb: Function) {
     //sort the clients list
     lstClients = lstClients.sort((a, b) => a.name < b.name ? -1 : 1);
 
     //store it in localstorage
-    chrome.storage.local.set({ credentials: lstClients }, () => cb());
-
+    await browser.storage.local.set({ credentials: lstClients });
+    cb();
 }
 
 function reloadClientDropdown() {
-    $('#ddlClients').html('');
-    $('#ddlClients').append('<option value="-1">(New Client)</option>');
-    for (let i = 0; i < lstClients.length; i++)
-        $('#ddlClients').append('<option value=' + i + '>' + lstClients[i].name + '</option>');
+    $('#ddlClients').children().remove();
+    let elSelect = document.getElementById('ddlClients');
+    let elOptDefault = document.createElement('option');
+    elOptDefault.innerText = '(New Client)';
+    elOptDefault.setAttribute('value', '-1');
+    if (elSelect)
+        elSelect.appendChild(elOptDefault);
+    //$('#ddlClients').append('<option value="-1">(New Client)</option>');
+    for (let i = 0; i < lstClients.length; i++) {
+        //$('#ddlClients').append('<option value=' + i + '>' + lstClients[i].name + '</option>');
+        let elOptItem = document.createElement('option');
+        elOptItem.innerText = escapeHTML(lstClients[i].name);
+        elOptItem.setAttribute('value', i.toString());
+        if (elSelect)
+            elSelect.appendChild(elOptItem);
+    }
+
 }
 
 function exportToClipboard() {
@@ -51,15 +67,15 @@ function exportToClipboard() {
 
     result = result.substr(0, result.length - 2);
 
-    $('#txtCopyData').val(result);
+    (<HTMLTextAreaElement>$('#txtCopyData')[0]).value = result;
     $('#txtCopyData').select();
     document.execCommand('copy');
-    $('#lblMessage').html('Data copied. Please paste in Excel');
+    $('#lblMessage').text('Data copied. Please paste in Excel');
 }
 
 function importFromClipboard(result: string) {
     lstClients = [];
-    let lstRows = result.split(/\r\n/);
+    let lstRows = result.split(/\r?\n/); //Firefox clipboard read text remove carriage return, so it is read optionally as line splitter
     for (let i = 0; i < lstRows.length; i++) {
         let row = lstRows[i];
         if (row.toLowerCase() == 'name\tuser\tpass\ttan') continue; //ignore column header
@@ -76,7 +92,7 @@ function importFromClipboard(result: string) {
     $('#txtPasteData').val('');
     saveClients(() => {
         reloadClientDropdown();
-        $('#lblMessage').html('Client credentials imported. Please click the dropdown');
+        $('#lblMessage').text('Client credentials imported. Please click the dropdown');
     });
 }
 
@@ -95,22 +111,22 @@ $(document).ready(() => {
         let clientPass = <string>$('#txtClientPass').val();
         let clientTAN = <string>$('#txtClientTAN').val();
         if (!clientName) {
-            $('#lblMessage').html('Name not found');
+            $('#lblMessage').text('Name not found');
             return;
         }
         if (!clientUser) {
-            $('#lblMessage').html('Invalid Username');
+            $('#lblMessage').text('Invalid Username');
             return;
         }
         if (!clientPass) {
-            $('#lblMessage').html('Invalid Password');
+            $('#lblMessage').text('Invalid Password');
             return;
         }
 
         //check if client name already exists
         let idxClient = lstClients.findIndex(p => p.name == clientName);
         if (idxClient !== -1) {
-            $('#lblMessage').html('Duplicate client name');
+            $('#lblMessage').text('Duplicate client name');
             return;
         }
 
@@ -123,7 +139,7 @@ $(document).ready(() => {
         });
         saveClients(() => {
             reloadClientDropdown();
-            $('#lblMessage').html('Client credentials added. Please click the dropdown');
+            $('#lblMessage').text('Client credentials added. Please click the dropdown');
         });
 
     });
@@ -135,7 +151,7 @@ $(document).ready(() => {
             reloadClientDropdown();
             $('#ddlClients').val(-1);
             $('#ddlClients').trigger('change');
-            $('#lblMessage').html('Client deleted');
+            $('#lblMessage').text('Client deleted');
         });
     });
 
@@ -151,12 +167,12 @@ $(document).ready(() => {
             reloadClientDropdown();
             $('#ddlClients').val(selectedIndex);
             $('#ddlClients').trigger('change');
-            $('#lblMessage').html('Credentials updated');
+            $('#lblMessage').text('Credentials updated');
         });
         reloadClientDropdown();
         $('#ddlClients').val(selectedIndex);
         $('#ddlClients').trigger('change');
-        $('#lblMessage').html('Credentials updated');
+        $('#lblMessage').text('Credentials updated');
     });
 
     $('#ddlClients').change(function () {
@@ -188,7 +204,7 @@ $(document).ready(() => {
         }
     });
 
-    $('#btnPasteCredentials').click(() => {
+    $('#btnPasteCredentials').click(async () => {
         let selectedIndex = parseInt(<string>$('#ddlClients').val());
         if (selectedIndex !== -1) {
             let user = lstClients[selectedIndex].user;
@@ -204,15 +220,13 @@ $(document).ready(() => {
                 action: 'paste-credential',
                 param: objCredential
             }
+
+            let tabs = await browser.tabs.query({ currentWindow: true, active: true })
+            let extn = tabs[0];
+            if (extn.url == 'https://www.tdscpc.gov.in/app/login.xhtml' && extn.id)
+                await browser.tabs.sendMessage(extn.id, msg);
+
             window.close();
-
-            chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
-                let extn = tabs[0];
-                if (extn.url == 'https://www.tdscpc.gov.in/app/login.xhtml' && extn.id)
-                    chrome.tabs.sendMessage(extn.id, msg);
-
-            });
-
         }
     });
 
